@@ -1,0 +1,252 @@
+<!doctype html>
+<html lang="fi">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>Big Five - Persoonallisuustesti (60 väittämää)</title>
+  <style>
+    :root{--bg:#f7fafc;--card:#ffffff;--accent:#2563eb;--muted:#6b7280}
+    body{font-family:Inter, ui-sans-serif, system-ui, -apple-system, "Segoe UI", Roboto, "Helvetica Neue", Arial; background:var(--bg); margin:0; padding:24px}
+    .container{max-width:980px;margin:0 auto}
+    header{display:flex;align-items:center;gap:16px;margin-bottom:18px}
+    h1{margin:0;font-size:20px}
+    p.lead{margin:4px 0 0;color:var(--muted)}
+    .card{background:var(--card);padding:18px;border-radius:12px;box-shadow:0 6px 20px rgba(15,23,42,0.05)}
+    .grid{display:grid;grid-template-columns:1fr 340px;gap:18px}
+    .questions{max-height:68vh;overflow:auto;padding-right:6px}
+    .q{padding:10px;border-radius:8px;border:1px solid #eef2ff;margin-bottom:8px}
+    .q .text{font-size:14px;margin-bottom:8px}
+    .scale{display:flex;gap:6px}
+    .scale label{flex:1;text-align:center;padding:8px 6px;border-radius:6px;border:1px solid #e6edf8;font-size:13px;cursor:pointer}
+    .scale input{display:none}
+    .scale input:checked + span{background:var(--accent);color:#fff;border-color:var(--accent)}
+    .controls{display:flex;gap:8px;margin-top:12px}
+    button{cursor:pointer;border:0;padding:10px 12px;border-radius:8px;font-weight:600}
+    .btn-primary{background:var(--accent);color:#fff}
+    .btn-ghost{background:transparent;border:1px solid #e6edf8}
+    aside{position:sticky;top:24px}
+    .results{margin-top:8px}
+    .trait{display:flex;justify-content:space-between;padding:10px;border-radius:8px;border:1px dashed #e6edf8;margin-bottom:8px;background:#fbfdff}
+    .small{font-size:13px;color:var(--muted)}
+    footer{margin-top:18px;text-align:center;color:var(--muted);font-size:13px}
+    @media(max-width:900px){.grid{grid-template-columns:1fr;}.questions{max-height:60vh}}
+  </style>
+</head>
+<body>
+  <div class="container">
+    <header>
+      <div class="card" style="display:inline-block;padding:12px 14px">
+        <strong>BF</strong>
+      </div>
+      <div>
+        <h1>Big Five - Persoonallisuustesti (60 väittämää)</h1>
+        <p class="lead">Täytä väittämät asteikolla 1–5. Soveltuu itsearviointiin ja harjoitteluun — ei korvaa standardoituja testejä.</p>
+      </div>
+    </header>
+
+    <div class="grid">
+      <main class="card questions" id="questions"></main>
+
+      <aside class="card">
+        <div>
+          <label>Nimi (valinnainen)</label>
+          <input id="name" placeholder="Esim. Maija" style="width:100%;padding:8px;margin-top:6px;border-radius:8px;border:1px solid #eef2ff" />
+        </div>
+
+        <div class="controls">
+          <button id="submit" class="btn-primary">Laske tulos</button>
+          <button id="reset" class="btn-ghost">Tyhjennä</button>
+        </div>
+
+        <div class="results" id="results">
+          <div class="small" style="margin-top:10px">Tulokset:</div>
+          <div id="traits"></div>
+        </div>
+
+        <div style="margin-top:10px;display:flex;gap:8px">
+          <button id="saveLocal" class="btn-ghost">Tallenna selaimeen</button>
+          <button id="downloadJSON" class="btn-ghost">Lataa JSON</button>
+        </div>
+
+        <div class="small" style="margin-top:12px">Huom: Tulokset ovat suuntaa-antavia.</div>
+      </aside>
+    </div>
+
+    <footer>Voit pyytää minulta tulkintaohjeet tai graafisen viennin.</footer>
+  </div>
+
+  <script>
+    // 60 väittämää — suomeksi, käänteiset merkitty reverse:true
+    const questions = [
+      // Openness (12)
+      {id:'Q1', text:'Pidän uusista ideoista ja konsepteista.', trait:'Openness', reverse:false},
+      {id:'Q2', text:'Nautin taiteesta ja kauneudesta.', trait:'Openness', reverse:false},
+      {id:'Q3', text:'Olen utelias monista eri aiheista.', trait:'Openness', reverse:false},
+      {id:'Q4', text:'Pidän tutkia uusia tapoja tehdä asioita.', trait:'Openness', reverse:false},
+      {id:'Q5', text:'Pidän abstrakteista ideoista enemmän kuin konkreettisista faktoista.', trait:'Openness', reverse:false},
+      {id:'Q6', text:'Välitän vähän taiteesta tai kulttuurista.', trait:'Openness', reverse:true},
+      {id:'Q7', text:'Pidän enemmän rutiineista kuin uusista kokemuksista.', trait:'Openness', reverse:true},
+      {id:'Q8', text:'Minulla on laaja kiinnostus erilaisiin harrastuksiin.', trait:'Openness', reverse:false},
+      {id:'Q9', text:'Helposti kyllästyn tuttuihin asioihin.', trait:'Openness', reverse:false},
+      {id:'Q10', text:'Pidän huomaamattani filosofisista pohdinnoista.', trait:'Openness', reverse:false},
+      {id:'Q11', text:'En ymmärrä modernia taidetta.', trait:'Openness', reverse:true},
+      {id:'Q12', text:'Pidän ideoiden ja mahdollisuuksien pohtimisesta.', trait:'Openness', reverse:false},
+      // Conscientiousness (12)
+      {id:'Q13', text:'Suunnittelen asiat huolellisesti etukäteen.', trait:'Conscientiousness', reverse:false},
+      {id:'Q14', text:'Täytän sovitut tehtävät ajallaan.', trait:'Conscientiousness', reverse:false},
+      {id:'Q15', text:'Pidän järjestyksestä ympärilläni.', trait:'Conscientiousness', reverse:false},
+      {id:'Q16', text:'Aloitan usein projekteja, mutta harvoin viimeistelen ne.', trait:'Conscientiousness', reverse:true},
+      {id:'Q17', text:'Pyrin tekemään parhaani työssäni.', trait:'Conscientiousness', reverse:false},
+      {id:'Q18', text:'Välttelen vastuuta, kun mahdollista.', trait:'Conscientiousness', reverse:true},
+      {id:'Q19', text:'Pidän tarkasta suunnittelusta ennen kuin aloitan.', trait:'Conscientiousness', reverse:false},
+      {id:'Q20', text:'Voin luottaa siihen, että pidän kiinni lupaamistani asioista.', trait:'Conscientiousness', reverse:false},
+      {id:'Q21', text:'Jätän usein asiat viime tippaan.', trait:'Conscientiousness', reverse:true},
+      {id:'Q22', text:'Teen asiat järjestelmällisesti.', trait:'Conscientiousness', reverse:false},
+      {id:'Q23', text:'Olen huolellinen yksityiskohtien suhteen.', trait:'Conscientiousness', reverse:false},
+      {id:'Q24', text:'En aina noudata sääntöjä tai ohjeita.', trait:'Conscientiousness', reverse:true},
+      // Extraversion (12)
+      {id:'Q25', text:'Tunnen oloni energiseksi sosiaalisissa tilanteissa.', trait:'Extraversion', reverse:false},
+      {id:'Q26', text:'Pidän puhumisesta ja esillä olemisesta.', trait:'Extraversion', reverse:false},
+      {id:'Q27', text:'Hain aktiivisesti uusia tuttavuuksia.', trait:'Extraversion', reverse:false},
+      {id:'Q28', text:'Vietän mieluummin aikaa yksin kuin isossa seurueessa.', trait:'Extraversion', reverse:true},
+      {id:'Q29', text:'Tunnen oloni mukavaksi huomion kohteena.', trait:'Extraversion', reverse:false},
+      {id:'Q30', text:'Pidän innostuksesta ja toiminnan täyteisistä päivistä.', trait:'Extraversion', reverse:false},
+      {id:'Q31', text:'Usein olen hiljaisempi kuin muut.', trait:'Extraversion', reverse:true},
+      {id:'Q32', text:'Helposti aloitan keskustelun vieraiden ihmisten kanssa.', trait:'Extraversion', reverse:false},
+      {id:'Q33', text:'Tunnen itseni vetäytyneeksi sosiaalisissa tilanteissa.', trait:'Extraversion', reverse:true},
+      {id:'Q34', text:'Pidän toiminnallisista tapahtumista ja juhlista.', trait:'Extraversion', reverse:false},
+      {id:'Q35', text:'Saan virtaa muiden seurassa olemisesta.', trait:'Extraversion', reverse:false},
+      {id:'Q36', text:'Usein olen ensimmäinen, joka liittyy keskusteluun.', trait:'Extraversion', reverse:false},
+      // Agreeableness (12)
+      {id:'Q37', text:'Yleisesti ottaen luotan ihmisiin.', trait:'Agreeableness', reverse:false},
+      {id:'Q38', text:'Autan mieluusti muita ilman odotusta vastapalveluksesta.', trait:'Agreeableness', reverse:false},
+      {id:'Q39', text:'Välitän muiden tunteista.', trait:'Agreeableness', reverse:false},
+      {id:'Q40', text:'Kilpailu motivoi minua enemmän kuin yhteistyö.', trait:'Agreeableness', reverse:true},
+      {id:'Q41', text:'Olen valmis kompromisseihin ryhmän takia.', trait:'Agreeableness', reverse:false},
+      {id:'Q42', text:'Usein olen epäluuloinen toisten motiiveista.', trait:'Agreeableness', reverse:true},
+      {id:'Q43', text:'Pidän ystävällisyydestä arjessa.', trait:'Agreeableness', reverse:false},
+      {id:'Q44', text:'Minua ärsyttävät helposti muiden ihmisten tarpeet.', trait:'Agreeableness', reverse:true},
+      {id:'Q45', text:'Yleensä annan muiden etusijan, jos se ei ole haitallista.', trait:'Agreeableness', reverse:false},
+      {id:'Q46', text:'Olen helppo luottaa ja avoin keskustelulle.', trait:'Agreeableness', reverse:false},
+      {id:'Q47', text:'Pidän harmonisesta ilmapiiristä enemmän kuin huomion hakemisesta.', trait:'Agreeableness', reverse:false},
+      {id:'Q48', text:'Saatan tehdä tarvittaessa ankaran päätöksen, vaikka se loukkaisikin muita.', trait:'Agreeableness', reverse:true},
+      // Neuroticism (12)
+      {id:'Q49', text:'Koen usein huolta tai ahdistusta.', trait:'Neuroticism', reverse:false},
+      {id:'Q50', text:'Tunteeni muuttuvat helposti päivän aikana.', trait:'Neuroticism', reverse:false},
+      {id:'Q51', text:'Reagoin voimakkaasti stressaaviin tilanteisiin.', trait:'Neuroticism', reverse:false},
+      {id:'Q52', text:'Pystyn pitämään tunteeni tasapainossa (vastakkainen).', trait:'Neuroticism', reverse:true},
+      {id:'Q53', text:'Minulla on taipumusta huolehtia asioista liikaa.', trait:'Neuroticism', reverse:false},
+      {id:'Q54', text:'Yleensä palaudun nopeasti vastoinkäymisistä (vastakkainen).', trait:'Neuroticism', reverse:true},
+      {id:'Q55', text:'Tunnen usein epämukavuutta sosiaalisissa tilanteissa.', trait:'Neuroticism', reverse:false},
+      {id:'Q56', text:'Minulla on vaikeuksia päästä yli pettymyksistä.', trait:'Neuroticism', reverse:false},
+      {id:'Q57', text:'Harvoin tunnen itseni surulliseksi (vastakkainen).', trait:'Neuroticism', reverse:true},
+      {id:'Q58', text:'Stressi vaikuttaa helposti uneeni tai ruokahaluuni.', trait:'Neuroticism', reverse:false},
+      {id:'Q59', text:'Pelkään usein tulevaisuuden epävarmuuksia.', trait:'Neuroticism', reverse:false},
+      {id:'Q60', text:'Yleisesti tunnen itseni emotionaalisesti vakaaksi (vastakkainen).', trait:'Neuroticism', reverse:true}
+    ];
+
+    // Render questions
+    const questionsEl = document.getElementById('questions');
+    function render() {
+      questionsEl.innerHTML = '';
+      questions.forEach((q, idx) => {
+        const div = document.createElement('div'); div.className = 'q';
+        const num = document.createElement('div'); num.className='small'; num.textContent = `#${idx+1}`;
+        const txt = document.createElement('div'); txt.className='text'; txt.textContent = q.text + (q.reverse? ' (käänteinen)': '');
+        const scale = document.createElement('div'); scale.className='scale';
+        for(let i=1;i<=5;i++){
+          const id = `${q.id}_v${i}`;
+          const label = document.createElement('label');
+          const input = document.createElement('input'); input.type='radio'; input.name=q.id; input.id=id; input.value=i;
+          input.addEventListener('change', saveProgress);
+          const span = document.createElement('span'); span.textContent = i;
+          label.appendChild(input); label.appendChild(span);
+          scale.appendChild(label);
+        }
+        div.appendChild(num); div.appendChild(txt); div.appendChild(scale);
+        questionsEl.appendChild(div);
+      });
+    }
+
+    function getResponses(){
+      const res = {};
+      questions.forEach(q =>{
+        const val = document.querySelector(`input[name="${q.id}"]:checked`);
+        res[q.id] = val ? Number(val.value) : null;
+      });
+      return res;
+    }
+
+    function score(responses){
+      const traits = {Openness:[],Conscientiousness:[],Extraversion:[],Agreeableness:[],Neuroticism:[]};
+      questions.forEach(q=>{
+        const v = responses[q.id]; if(v==null) return;
+        const score = q.reverse ? (6 - v) : v; // invert reverse items
+        traits[q.trait].push(score);
+      });
+      const averages = {};
+      Object.keys(traits).forEach(t=>{
+        const arr = traits[t];
+        averages[t] = arr.length ? (arr.reduce((a,b)=>a+b,0)/arr.length).toFixed(2) : null;
+      });
+      return averages;
+    }
+
+    function showResults(){
+      const res = getResponses();
+      const sc = score(res);
+      const traitsEl = document.getElementById('traits'); traitsEl.innerHTML = '';
+      Object.entries(sc).forEach(([k,v])=>{
+        const div = document.createElement('div'); div.className='trait';
+        const left = document.createElement('div'); left.innerHTML = `<strong>${k}</strong><div class="small">(keskiarvo)</div>`;
+        const right = document.createElement('div'); right.innerHTML = v!==null ? `<strong>${v}</strong>` : '<span class="small">puuttuu vastauksia</span>';
+        div.appendChild(left); div.appendChild(right);
+        traitsEl.appendChild(div);
+      });
+      // Save last result to localStorage for quick retrieval
+      localStorage.setItem('bigfive_last_result', JSON.stringify({name:document.getElementById('name').value||null,timestamp:new Date().toISOString(),scores:sc}));
+    }
+
+    function saveProgress(){
+      // optional: autosave each change to localStorage
+      const res = getResponses();
+      localStorage.setItem('bigfive_progress', JSON.stringify({responses:res,name:document.getElementById('name').value||''}));
+    }
+
+    function loadProgress(){
+      const data = JSON.parse(localStorage.getItem('bigfive_progress')||'null');
+      if(!data) return;
+      if(data.name) document.getElementById('name').value = data.name;
+      const responses = data.responses||{};
+      Object.entries(responses).forEach(([k,v])=>{
+        if(v==null) return;
+        const input = document.querySelector(`input[name="${k}"][value="${v}"]`);
+        if(input) input.checked = true;
+      });
+    }
+
+    function resetAll(){
+      document.querySelectorAll('input[type=radio]').forEach(i=>i.checked=false);
+      document.getElementById('name').value='';
+      localStorage.removeItem('bigfive_progress');
+      document.getElementById('traits').innerHTML='';
+    }
+
+    function downloadJSON(){
+      const payload = {name:document.getElementById('name').value||null,timestamp:new Date().toISOString(),responses:getResponses(),scores:score(getResponses())};
+      const blob = new Blob([JSON.stringify(payload,null,2)],{type:'application/json'});
+      const url = URL.createObjectURL(blob); const a=document.createElement('a'); a.href=url; a.download=`bigfive_results_${new Date().toISOString()}.json`; a.click(); URL.revokeObjectURL(url);
+    }
+
+    // Buttons
+    document.getElementById('submit').addEventListener('click', ()=>{ showResults(); window.scrollTo({top:0,behavior:'smooth'}); });
+    document.getElementById('reset').addEventListener('click', ()=>{ if(confirm('Haluatko tyhjentää kaikki vastaukset?')) resetAll(); });
+    document.getElementById('saveLocal').addEventListener('click', ()=>{ const payload={name:document.getElementById('name').value||null,timestamp:new Date().toISOString(),responses:getResponses(),scores:score(getResponses())}; const key='bigfive_saved_'+new Date().toISOString(); localStorage.setItem(key,JSON.stringify(payload)); alert('Tallennettu selaimen localStorageen.'); });
+    document.getElementById('downloadJSON').addEventListener('click', downloadJSON);
+
+    // initial render
+    render(); loadProgress();
+
+  </script>
+</body>
+</html>
